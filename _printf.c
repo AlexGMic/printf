@@ -1,76 +1,78 @@
 #include "main.h"
 /**
-  * find_function - function that finds formats for _printf
-  * calls the corresponding function.
-  * @format: format (char, string, int, decimal)
-  * Return: NULL or function associated ;
-  */
-int (*find_function(const char *format))(va_list)
+ * _printf - format and print data
+ * @format: format specified by the user
+ *
+ * Return: size in bytes of the printed string.
+ */
+int _printf(const char * const format, ...)
 {
-	unsigned int i = 0;
-	code_f find_f[] = {
-		{"c", print_char},
-		{"s", print_string},
-		{"i", print_int},
-		{"d", print_dec},
-		{"r", print_rev},
-		{"b", print_bin},
-		{"u", print_unsig},
-		{"o", print_octal},
-		{"x", print_x},
-		{"X", print_X},
-		{"R", print_rot13},
-		{NULL, NULL}
-	};
+	va_list parameters;
+	unsigned int i;
+	int func;
 
-	while (find_f[i].sc)
-	{
-		if (find_f[i].sc[0] == (*format))
-			return (find_f[i].f);
-		i++;
-	}
-	return (NULL);
-}
-/**
-  * _printf - function that produces output according to a format.
-  * @format: format (char, string, int, decimal)
-  * Return: size the output text;
-  */
-int _printf(const char *format, ...)
-{
-	va_list ap;
-	int (*f)(va_list);
-	unsigned int i = 0, cprint = 0;
-
-	if (format == NULL)
+	if (!format)
 		return (-1);
-	va_start(ap, format);
+
+	va_start(parameters, format);
+	i = 0;
 	while (format[i])
 	{
-		while (format[i] != '%' && format[i])
+		if (format[i] == '%')
 		{
-			_putchar(format[i]);
-			cprint++;
-			i++;
+			if (!format[i + 1])
+			{
+				_print(-1);
+				va_end(parameters);
+				return (-1);
+			}
+			func = fmt(format[i + 1])(parameters);
+			if (func == -1)
+			{
+				va_end(parameters);
+				return (-1);
+			}
+			else
+				i = i + 2;
 		}
-		if (format[i] == '\0')
-			return (cprint);
-		f = find_function(&format[i + 1]);
-		if (f != NULL)
-		{
-			cprint += f(ap);
-			i += 2;
-			continue;
-		}
-		if (!format[i + 1])
-			return (-1);
-		_putchar(format[i]);
-		cprint++;
-		if (format[i + 1] == '%')
-			i += 2;
 		else
+		{
+			_print(format[i]);
 			i++;
+		}
 	}
-	va_end(ap);
-	return (cprint);
+	va_end(parameters);
+	return (_print(-1));
+}
+
+int _print(char c)
+{
+	static char buf[SIZE];
+	static int count, i, reset;
+
+	if (reset)
+	{
+		count = 0;
+		reset = 0;
+	}
+
+	if (c == -1)
+	{
+		i = 0;
+		reset = 1;
+		write(1, buf, SIZE);
+		return (count + 1);
+	}
+	else if (i >= SIZE)
+	{
+		write(1, buf, SIZE);
+		for (i = 0; i < SIZE; i++)
+			buf[i] = 0;
+		i = 0;
+		return (0);
+	}
+
+	buf[i++] = c;
+	count++;
+	return (0);
 }
